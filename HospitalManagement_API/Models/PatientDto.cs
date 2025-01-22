@@ -13,5 +13,6 @@ namespace HospitalManagement_API.Models
         public string Address { get; set; }
         public string EmergencyContact { get; set; }
         public string BloodGroup { get; set; }
+        public int PatientId { get; internal set; }
     }
 }

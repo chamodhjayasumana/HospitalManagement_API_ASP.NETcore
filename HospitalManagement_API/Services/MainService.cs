@@ -3,6 +3,7 @@ using System;
 using System.Data;
 using System.Data.SqlClient;
 using HospitalManagement_API.DataAccess;
+using HospitalManagement_API.Models;
 
 namespace HospitalManagement_API.Services
 {
@@ -14,8 +15,7 @@ namespace HospitalManagement_API.Services
         {
             _db = db;
         }
-
-        public bool InsertPatient(string firstName, string lastName, DateTime dateOfBirth, string gender, string phoneNumber, string email, string address, string emergencyContact, string bloodGroup)
+        public bool InsertPatient(PatientDto patient)
         {
             using (SqlConnection conn = _db.GetConnection())
             {
@@ -23,15 +23,15 @@ namespace HospitalManagement_API.Services
                 using (SqlCommand cmd = new SqlCommand("InsertPatient", conn))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@first_name", firstName);
-                    cmd.Parameters.AddWithValue("@last_name", lastName);
-                    cmd.Parameters.AddWithValue("@date_of_birth", dateOfBirth);
-                    cmd.Parameters.AddWithValue("@gender", gender);
-                    cmd.Parameters.AddWithValue("@phone_number", phoneNumber);
-                    cmd.Parameters.AddWithValue("@email", email);
-                    cmd.Parameters.AddWithValue("@address", address);
-                    cmd.Parameters.AddWithValue("@emergency_contact", emergencyContact);
-                    cmd.Parameters.AddWithValue("@blood_group", bloodGroup);
+                    cmd.Parameters.AddWithValue("@first_name", patient.FirstName);
+                    cmd.Parameters.AddWithValue("@last_name", patient.LastName);
+                    cmd.Parameters.AddWithValue("@date_of_birth", patient.DateOfBirth);
+                    cmd.Parameters.AddWithValue("@gender", patient.Gender);
+                    cmd.Parameters.AddWithValue("@phone_number", patient.PhoneNumber);
+                    cmd.Parameters.AddWithValue("@email", patient.Email);
+                    cmd.Parameters.AddWithValue("@address", patient.Address);
+                    cmd.Parameters.AddWithValue("@emergency_contact", patient.EmergencyContact);
+                    cmd.Parameters.AddWithValue("@blood_group", patient.BloodGroup);
 
                     cmd.ExecuteNonQuery();
                     return true;
@@ -39,8 +39,7 @@ namespace HospitalManagement_API.Services
             }
         }
 
-        // Method to update an existing patient
-        public bool UpdatePatient(int patientId, string firstName, string lastName, DateTime dateOfBirth, string gender, string phoneNumber, string email, string address, string emergencyContact, string bloodGroup)
+        public bool UpdatePatient(int patientId, PatientDto patient)
         {
             using (SqlConnection conn = _db.GetConnection())
             {
@@ -49,18 +48,17 @@ namespace HospitalManagement_API.Services
                     conn.Open();
                     using (SqlCommand cmd = new SqlCommand("UpdatePatient", conn))
                     {
-
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@patient_id", patientId);
-                        cmd.Parameters.AddWithValue("@first_name", firstName);
-                        cmd.Parameters.AddWithValue("@last_name", lastName);
-                        cmd.Parameters.AddWithValue("@date_of_birth", dateOfBirth);
-                        cmd.Parameters.AddWithValue("@gender", gender);
-                        cmd.Parameters.AddWithValue("@phone_number", phoneNumber);
-                        cmd.Parameters.AddWithValue("@email", email);
-                        cmd.Parameters.AddWithValue("@address", address);
-                        cmd.Parameters.AddWithValue("@emergency_contact", emergencyContact);
-                        cmd.Parameters.AddWithValue("@blood_group", bloodGroup);
+                        cmd.Parameters.AddWithValue("@first_name", patient.FirstName);
+                        cmd.Parameters.AddWithValue("@last_name", patient.LastName);
+                        cmd.Parameters.AddWithValue("@date_of_birth", patient.DateOfBirth);
+                        cmd.Parameters.AddWithValue("@gender", patient.Gender);
+                        cmd.Parameters.AddWithValue("@phone_number", patient.PhoneNumber);
+                        cmd.Parameters.AddWithValue("@email", patient.Email);
+                        cmd.Parameters.AddWithValue("@address", patient.Address);
+                        cmd.Parameters.AddWithValue("@emergency_contact", patient.EmergencyContact);
+                        cmd.Parameters.AddWithValue("@blood_group", patient.BloodGroup);
 
                         cmd.ExecuteNonQuery();
                         return true;
@@ -68,35 +66,45 @@ namespace HospitalManagement_API.Services
                 }
                 catch (Exception ex)
                 {
-                    // Log the exception or handle it as needed
-                    Console.WriteLine(ex.Message);
-                    return false;
+                    throw new Exception(ex.Message);
                 }
-
             }
         }
 
-
-        // Method to get all patients
-        public DataTable GetAllPatients()
+        public List<PatientDto> GetAllPatients()
         {
             using (SqlConnection conn = _db.GetConnection())
             {
                 using (SqlCommand cmd = new SqlCommand("GetAllPatients", conn))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
-                    using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
+                    conn.Open();
+                    using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        DataTable dt = new DataTable();
-                        adapter.Fill(dt);
-                        return dt;
+                        var patients = new List<PatientDto>();
+                        while (reader.Read())
+                        {
+                            patients.Add(new PatientDto
+                            {
+                                PatientId = Convert.ToInt32(reader["patient_id"]),
+                                FirstName = reader["first_name"].ToString(),
+                                LastName = reader["last_name"].ToString(),
+                                DateOfBirth = Convert.ToDateTime(reader["date_of_birth"]),
+                                Gender = reader["gender"].ToString(),
+                                PhoneNumber = reader["phone_number"].ToString(),
+                                Email = reader["email"].ToString(),
+                                Address = reader["address"].ToString(),
+                                EmergencyContact = reader["emergency_contact"].ToString(),
+                                BloodGroup = reader["blood_group"].ToString()
+                            });
+                        }
+                        return patients;
                     }
                 }
             }
         }
 
-        // Method to get a specific patient by ID
-        public DataTable GetPatientByID(int patientId)
+        public PatientDto GetPatientByID(int patientId)
         {
             using (SqlConnection conn = _db.GetConnection())
             {
@@ -104,36 +112,64 @@ namespace HospitalManagement_API.Services
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@patient_id", patientId);
-                    using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
+                    conn.Open();
+                    using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        DataTable dt = new DataTable();
-                        adapter.Fill(dt);
-                        return dt;
+                        if (reader.Read())
+                        {
+                            return new PatientDto
+                            {
+                                PatientId = Convert.ToInt32(reader["patient_id"]),
+                                FirstName = reader["first_name"].ToString(),
+                                LastName = reader["last_name"].ToString(),
+                                DateOfBirth = Convert.ToDateTime(reader["date_of_birth"]),
+                                Gender = reader["gender"].ToString(),
+                                PhoneNumber = reader["phone_number"].ToString(),
+                                Email = reader["email"].ToString(),
+                                Address = reader["address"].ToString(),
+                                EmergencyContact = reader["emergency_contact"].ToString(),
+                                BloodGroup = reader["blood_group"].ToString()
+                            };
+                        }
+                        return null;
                     }
                 }
             }
         }
 
-        public DataTable SearchPatients(string searchTerm)
+        public List<PatientDto> SearchPatients(string searchTerm)
         {
-            DataTable dt = new DataTable();
             using (SqlConnection conn = _db.GetConnection())
             {
                 using (SqlCommand cmd = new SqlCommand("SearchPatients", conn))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@SearchTerm", $"%{searchTerm}%");
-
-                    using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                    conn.Open();
+                    using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        da.Fill(dt);
+                        var patients = new List<PatientDto>();
+                        while (reader.Read())
+                        {
+                            patients.Add(new PatientDto
+                            {
+                                PatientId = Convert.ToInt32(reader["patient_id"]),
+                                FirstName = reader["first_name"].ToString(),
+                                LastName = reader["last_name"].ToString(),
+                                DateOfBirth = Convert.ToDateTime(reader["date_of_birth"]),
+                                Gender = reader["gender"].ToString(),
+                                PhoneNumber = reader["phone_number"].ToString(),
+                                Email = reader["email"].ToString(),
+                                Address = reader["address"].ToString(),
+                                EmergencyContact = reader["emergency_contact"].ToString(),
+                                BloodGroup = reader["blood_group"].ToString()
+                            });
+                        }
+                        return patients;
                     }
                 }
             }
-            return dt;
         }
-
-
 
     }
 }
