@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using HospitalManagement_API.DataAccess;
@@ -39,7 +40,7 @@ namespace HospitalManagement_API.Services
             }
         }
 
-        public DataTable GetPatientAppointments(int patientId)
+        public List<Dictionary<string, object>> GetPatientAppointments(int patientId)
         {
             try
             {
@@ -53,14 +54,15 @@ namespace HospitalManagement_API.Services
                     {
                         DataTable dt = new DataTable();
                         da.Fill(dt);
-                        return dt;
+
+                        return DataTableToList(dt);
                     }
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error fetching patient appointments: {ex.Message}");
-                return new DataTable();
+                return new List<Dictionary<string, object>>();
             }
         }
 
@@ -86,7 +88,7 @@ namespace HospitalManagement_API.Services
             }
         }
 
-        public DataTable GetAppointmentDetailsById(int appointmentId)
+        public Dictionary<string, object> GetAppointmentDetailsById(int appointmentId)
         {
             try
             {
@@ -100,15 +102,40 @@ namespace HospitalManagement_API.Services
                     {
                         DataTable dt = new DataTable();
                         da.Fill(dt);
-                        return dt;
+
+                        if (dt.Rows.Count > 0)
+                        {
+                            return DataRowToDictionary(dt.Rows[0]);
+                        }
+                        return null;
                     }
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error fetching appointment details: {ex.Message}");
-                return new DataTable();
+                return null;
             }
+        }
+
+        private List<Dictionary<string, object>> DataTableToList(DataTable table)
+        {
+            var result = new List<Dictionary<string, object>>();
+            foreach (DataRow row in table.Rows)
+            {
+                result.Add(DataRowToDictionary(row));
+            }
+            return result;
+        }
+
+        private Dictionary<string, object> DataRowToDictionary(DataRow row)
+        {
+            var dict = new Dictionary<string, object>();
+            foreach (DataColumn col in row.Table.Columns)
+            {
+                dict[col.ColumnName] = row[col];
+            }
+            return dict;
         }
     }
 }

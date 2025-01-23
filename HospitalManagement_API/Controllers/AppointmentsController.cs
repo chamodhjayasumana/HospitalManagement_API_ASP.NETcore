@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Data;
+using System.Collections.Generic;
 using HospitalManagement_API.Models;
 using HospitalManagement_API.Services;
 
@@ -34,7 +34,7 @@ namespace HospitalManagement_API.Controllers
         }
 
         [HttpGet("GetPatientAppointments/{patientId}")]
-        public ActionResult<DataTable> GetPatientAppointments(int patientId)
+        public ActionResult<List<Dictionary<string, object>>> GetPatientAppointments(int patientId)
         {
             try
             {
@@ -50,6 +50,8 @@ namespace HospitalManagement_API.Controllers
         [HttpPut("UpdateAppointmentStatus/{appointmentId}")]
         public ActionResult<bool> UpdateAppointmentStatus(int appointmentId, [FromBody] string status)
         {
+            if (string.IsNullOrEmpty(status)) return BadRequest("Status is required.");
+
             try
             {
                 var result = _appointmentService.UpdateAppointmentStatus(appointmentId, status);
@@ -62,11 +64,12 @@ namespace HospitalManagement_API.Controllers
         }
 
         [HttpGet("GetAppointmentDetailsById/{appointmentId}")]
-        public ActionResult<DataTable> GetAppointmentDetailsById(int appointmentId)
+        public ActionResult<Dictionary<string, object>> GetAppointmentDetailsById(int appointmentId)
         {
             try
             {
                 var appointmentDetails = _appointmentService.GetAppointmentDetailsById(appointmentId);
+                if (appointmentDetails == null) return NotFound("Appointment not found.");
                 return Ok(appointmentDetails);
             }
             catch (Exception ex)
