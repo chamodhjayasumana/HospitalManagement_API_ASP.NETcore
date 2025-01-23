@@ -9,6 +9,7 @@ builder.Services.AddControllers();
 builder.Services.AddSingleton<DB_Connection>();
 builder.Services.AddScoped<MainService>();
 builder.Services.AddScoped<DoctorService>();
+builder.Services.AddScoped<AppointmentService>();
 
 
 
