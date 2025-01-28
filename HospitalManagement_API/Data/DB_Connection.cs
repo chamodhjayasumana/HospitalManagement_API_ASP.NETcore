@@ -14,8 +14,10 @@ namespace HospitalManagement_API.DataAccess
 
         public SqlConnection GetConnection()
         {
-            string connectionString = _configuration.GetConnectionString("HospitalManagementConnection");
+            string connectionString = _configuration.GetConnectionString("HospitalDb");
             return new SqlConnection(connectionString);
         }
+         
+
     }
 }
